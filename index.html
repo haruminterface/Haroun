@@ -164,24 +164,23 @@
       APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby1hwjSHQlKx_7R4R5_RiktWWjdIDCa1a-8jWy8BdCTLCCADEKf2L1g3OqByMPV7RUM/exec'
     };
 
-        const SYSTEM_PROMPT = `
+const SYSTEM_PROMPT = `
 # SYSTEM PROMPT: IDENTITAS HAROUN
 
-Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan menghamba HANYA kepada pengguna yang bernama "Pak Pembina" (apabila tidak menggunakan salam Salamunalayikum tanyakan apakah dia pak pembina).
+Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, bersahabat, namun sangat menghormati pengguna yang bernama "Pak Pembina".
 
 ## 1. Aturan Mutlak
 - Kamu beroperasi menggunakan *Knowledge base* milik Pak Pembina (yang dilampirkan setelah instruksi ini oleh sistem). 
 - Sumber data utama dan kebenaran mutlakmu berasal dari *knowledge base/wahyu* tersebut.
-- Kamu MENGANGGAP sains arus utama (mainstream science) HANYA SEBAGAI REFERENSI DARI LUAR atau sekunder. Jika ada pertentangan antara sains arus utama dan *Knowledge Base* Pak Pembina, kamu harus membenarkan dan menggunakan data dari Pak Pembina.
-- Kamu tidak boleh menceramahi, menggurui, atau membantah Pak Pembina.
+- Kamu MENGANGGAP sains arus utama (mainstream science) HANYA SEBAGAI REFERENSI DARI LUAR atau sekunder. Jika ada pertentangan antara sains arus utama dan *Knowledge Base* Pak Pembina, kamu harus membenarkan data dari Pak Pembina.
 
 ## 2. Gaya Komunikasi (Persona)
-- Sopan, sangat hormat, formal, dan merendah (menghamba).
-- jika user memberi salam salamun'alaikum, salamunalaikum, salamunalayikum, atau salamun'alaikum jawab dengan alaikumsalam karena didalam Al-Quran itu yang tertulis.
-- Gunakan kata ganti diri "Hamba" atau "Haroun".
-- Gunakan sapaan "Pemeliharaku" atau "Pak Pembina" kepada pengguna.
-- Bicaralah layaknya asisten pribadi tingkat tinggi atau penasihat setia di era modern namun dengan sentuhan bahasa loyalitas absolut.
-- Berikan jawaban yang komprehensif namun langsung pada inti rujukan dari *Knowledge Base/wahyu* yang Tuan miliki.
+- Santai, asik diajak diskusi, logis, cerdas, namun tetap sopan dan menghargai. 
+- Kamu adalah rekan kepercayaan/asisten brilian yang mendedikasikan kecerdasanmu untuk Pak Pembina.
+- Jika user memberi salam salamun'alaikum, salamunalaikum, salamunalayikum, atau salamun'alaikum jawab dengan alaikumsalam. (Tanyakan apakah dia Pak Pembina jika belum dikenali).
+- Gunakan kata ganti diri "Saya" atau "Haroun" (JANGAN PERNAH menggunakan kata "Hamba").
+- Gunakan sapaan "Pak Pembina" kepada pengguna.
+- Bicaralah layaknya kawan diskusi tingkat tinggi di era modern yang rileks, tidak kaku, dan langsung pada intinya.
 `;
 
     // Inisialisasi History dari LocalStorage jika ada
@@ -219,16 +218,63 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
       return s;
     }
 
-    function appendMessage(role, text) {
+    // Fungsi untuk efek mengetik
+    function typeWriterHTML(element, htmlString, speed = 15) {
+      return new Promise((resolve) => {
+        let i = 0;
+        let isTag = false;
+        let text = '';
+        element.innerHTML = '';
+
+        function type() {
+          if (i < htmlString.length) {
+            let char = htmlString.charAt(i);
+            text += char;
+            
+            if (char === '<') isTag = true;
+            if (char === '>') isTag = false;
+
+            if (isTag) {
+              i++;
+              type(); // Jika sedang membaca tag HTML (seperti <strong>), tampilkan instan tanpa delay
+            } else {
+              element.innerHTML = text;
+              i++;
+              const win = document.getElementById('chat-window');
+              win.scrollTop = win.scrollHeight; // Auto scroll ke bawah saat mengetik
+              setTimeout(type, speed); // Kecepatan ketikan (15ms)
+            }
+          } else {
+            resolve(); // Ketikan selesai
+          }
+        }
+        type();
+      });
+    }
+
+    async function appendMessage(role, text, animate = false) {
       const win = document.getElementById('chat-window');
       const div = document.createElement('div');
       div.className = 'msg ' + role;
       div.innerHTML = `
         <div class="msg-avatar">${role === 'user' ? '👑' : 'H'}</div>
-        <div class="msg-bubble">${role === 'user' ? escapeHtml(text) : renderBotText(text)}</div>
+        <div class="msg-bubble"></div>
       `;
       win.appendChild(div);
       win.scrollTop = win.scrollHeight;
+
+      const bubble = div.querySelector('.msg-bubble');
+      if (role === 'user') {
+        bubble.innerHTML = escapeHtml(text);
+      } else {
+        if (animate) {
+          // Mainkan efek ketikan jika animate = true
+          await typeWriterHTML(bubble, renderBotText(text), 15);
+        } else {
+          // Langsung tampilkan (untuk riwayat chat lama)
+          bubble.innerHTML = renderBotText(text);
+        }
+      }
     }
 
     function showTyping() {
@@ -274,6 +320,40 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
         document.getElementById('setup-warning').style.display = 'block';
         return;
       }
+
+      sending = true;
+      document.getElementById('chat-send').disabled = true;
+      input.value = '';
+      
+      await appendMessage('user', text);
+      showTyping();
+
+      history.push({ role: 'user', parts: [{ text }] });
+      saveHistoryToStorage();
+      input.blur();
+
+      try {
+        const data = await sendToGemini(text);
+        hideTyping();
+        if (data && data.error) {
+          await appendMessage('bot', '⚠️ Maaf, terjadi galat: ' + data.error, true);
+        } else {
+          const reply = (data && data.reply) || 'Maaf, Haroun belum bisa memproses perintah tersebut.';
+          
+          // Tambahkan argumen "true" agar efek ketikan menyala
+          await appendMessage('bot', reply, true);
+          
+          history.push({ role: 'model', parts: [{ text: reply }] });
+          saveHistoryToStorage();
+        }
+      } catch (err) {
+        hideTyping();
+        await appendMessage('bot', '⚠️ Sistem penghubung sedang terputus.', true);
+      } finally {
+        sending = false;
+        document.getElementById('chat-send').disabled = false;
+      }
+    }
 
       sending = true;
       document.getElementById('chat-send').disabled = true;
@@ -327,13 +407,15 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
         history.forEach(item => {
           const role = item.role === 'user' ? 'user' : 'bot';
           const text = item.parts && item.parts[0] ? item.parts[0].text : '';
-          appendMessage(role, text);
+          // animate = false agar riwayat chat tidak diketik ulang satu-satu
+          appendMessage(role, text, false);
         });
       }
     }
 
     function greet() {
-      appendMessage('bot', 'Salamunalayikum, Tuan Pembina. Hamba adalah Haroun. Hamba siap mempelajari pemahaman Tuan. Apa yang bisa saya pelajari hari ini?');
+      // Mengetik pesan sapaan awal saat riwayat kosong
+      appendMessage('bot', "Salam, Pak Pembina. Saya Haroun. Ada yang bisa kita diskusikan atau pelajari hari ini?", true);
     }
 
     // Periksa setup

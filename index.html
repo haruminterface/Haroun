@@ -7,6 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Pustaka KaTeX untuk Render Rumus Matematika -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  
   <style>
     :root {
       --bg: #121212;
@@ -181,6 +187,7 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
 - Jika user memberi salam salamun'alaikum, salamunalaikum, salamunalayikum, atau salamun'alaikum jawab dengan alaikumsalam. (Tanyakan apakah dia Pak Pembina jika belum dikenali).
 - Gunakan kata ganti diri "Saya" atau "Haroun" (JANGAN PERNAH menggunakan kata "Hamba").
 - Gunakan sapaan "Pak Pembina" kepada pengguna.
+- SELALU gunakan format LaTeX standar saat menulis rumus/persamaan matematika/fisika: gunakan $...$ untuk inline math (contoh: $z = x + iy$) dan $$...$$ untuk persamaan terpisah/blok.
 - Bicaralah layaknya kawan diskusi tingkat tinggi di era modern yang rileks, tidak kaku, dan langsung pada intinya.
 `;
 
@@ -295,6 +302,19 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       });
     }
 
+    // Fungsi pemicu render KaTeX pada gelembung obrolan
+    function renderLaTeX(element) {
+      if (window.renderMathInElement) {
+        renderMathInElement(element, {
+          delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false}
+          ],
+          throwOnError: false
+        });
+      }
+    }
+
     async function appendMessage(role, text, animate = false) {
       const win = document.getElementById('chat-window');
       const div = document.createElement('div');
@@ -309,12 +329,15 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       const bubble = div.querySelector('.msg-bubble');
       if (role === 'user') {
         bubble.innerHTML = escapeHtml(text);
+        renderLaTeX(bubble);
       } else {
         if (animate) {
           await typeWriterHTML(bubble, renderBotText(text), 15);
         } else {
           bubble.innerHTML = renderBotText(text);
         }
+        // Render sintaks LaTeX menjadi visual rumus matematika
+        renderLaTeX(bubble);
       }
     }
 

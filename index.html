@@ -291,6 +291,7 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
     }
 
     async function sendToGemini(userText) {
+      // PERBAIKAN BUG: Gunakan concat di sini, tetapi TIDAK push ke 'history' secara permanen dulu
       const payload = {
         contents: history.concat([{ role: 'user', parts: [{ text: userText }] }]),
         systemInstruction: SYSTEM_PROMPT
@@ -323,25 +324,29 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       document.getElementById('chat-send').disabled = true;
       input.value = '';
       
+      // 1. Tampilkan pesan user ke layar
       await appendMessage('user', text);
-      showTyping();
-
-      history.push({ role: 'user', parts: [{ text }] });
-      saveHistoryToStorage();
       
-      // Menutup keyboard di mobile agar pengguna bisa melihat jawaban
+      // 2. Tampilkan animasi mengetik & tutup keyboard
+      showTyping();
       input.blur();
 
       try {
+        // 3. Kirim ke API
         const data = await sendToGemini(text);
         hideTyping();
+        
         if (data && data.error) {
           await appendMessage('bot', '⚠️ Maaf, terjadi galat: ' + data.error, true);
+          // Jika error, pesan user tidak disimpan ke riwayat agar urutan tidak rusak.
         } else {
           const reply = (data && data.reply) || 'Maaf, Haroun belum bisa memproses perintah tersebut.';
           
+          // 4. Tampilkan pesan balasan bot
           await appendMessage('bot', reply, true);
           
+          // PERBAIKAN BUG: 5. Simpan pesan user DAN balasan bot secara berurutan ke memori
+          history.push({ role: 'user', parts: [{ text }] });
           history.push({ role: 'model', parts: [{ text: reply }] });
           saveHistoryToStorage();
         }

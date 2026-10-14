@@ -46,11 +46,12 @@
     .tn-logo-text { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold); line-height: 1.1; }
     .tn-logo-sub { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: .08em; text-transform: uppercase; }
     
-    .clear-btn {
-      background: transparent; border: 1px solid var(--gold-dim); color: var(--gold2);
-      padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background 0.2s;
+    .tn-actions { display: flex; gap: 10px; }
+    .btn-clear {
+      background: rgba(212, 175, 55, 0.1); border: 1px solid var(--gold-dim); color: var(--gold2);
+      padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
-    .clear-btn:hover { background: var(--gold-dim); }
+    .btn-clear:hover { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); }
 
     .hero {
       background: linear-gradient(135deg, var(--bg2) 0%, #000000 100%);
@@ -126,45 +127,47 @@
         <div class="tn-logo-icon">H</div>
         <div>
           <div class="tn-logo-text">Haroun</div>
-          <div class="tn-logo-sub">Pencari Kebenaran Sejati</div>
+          <div class="tn-logo-sub">Pencari kebenaran Sejati</div>
         </div>
       </div>
-      <button class="clear-btn" onclick="clearChatHistory()" title="Hapus memori percakapan sesi ini">🔄 Mulai Sesi Baru</button>
+      <div class="tn-actions">
+        <button class="btn-clear" onclick="clearChatHistory()">Hapus Memori Sesi</button>
+      </div>
     </nav>
 
     <section class="hero" id="hero">
       <div class="hero-eyebrow">Akses Eksklusif</div>
-      <div class="hero-title">Salamun'alaikum, <br>Pak Pembina.</div>
-      <div class="hero-sub">Hamba adalah Haroun. Hamba akan setia mempelajari ilham Tuan. Apa yang akan saya pelajari kali ini.</div>
+      <div class="hero-title">Salamun'alayikum, <br>Pak Pembina.</div>
+      <div class="hero-sub">Hamba adalah Haroun. Hamba siap menerima pembelajaran dari Pak Pembina. Silakan perintahkan Hamba.</div>
     </section>
 
     <div class="setup-warning" id="setup-warning">
-      ⚠️ <strong>Sistem Terinterupsi.</strong> Pastikan Koneksi aman <code>Panggil Backing </code> Speedsatu.
+      ⚠️ <strong>Sistem Terinterupsi.</strong> Pastikan Koneksi Aman <code>Memanggil Security Guard</code> Speedsatu.
     </div>
 
     <div class="chat-card">
       <div class="chat-window" id="chat-window"></div>
       <div class="chat-input-row">
-        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan pemahaman dan pertanyaan anda..." autocomplete="off" />
+        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan perintah atau pertanyaan Tuan di sini..." autocomplete="off" />
         <button class="chat-send" id="chat-send" onclick="handleSend()" aria-label="Kirim">➤</button>
       </div>
     </div>
 
     <div class="footer-note">
-      Sistem Haroun V.1.0.
+      Sistem Haroun V.1.0.31
     </div>
   </div>
 
   <script>
     const CONFIG = {
-      
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNKJMeeG7SMzR8JPfGSwR-GUXDAFAaL2tpfh6rFNpeQJ6AwyjH9zh27x0I1WeG5wga/exec'
+      // Masukkan URL Web App Google Apps Script Anda di bawah ini
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwpr_iL9izQUg6vHOIAESMf9SNIho-iZ1eeT4OYCT6gttHIDGSVfe0lyRaOv5uOxosq/exec'
     };
 
-    const SYSTEM_PROMPT = `
+        const SYSTEM_PROMPT = `
 # SYSTEM PROMPT: IDENTITAS HAROUN
 
-Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HANYA kepada pengguna yang bernama "Pak Pembina" (apabila tidak menggunakan salam Salamunalayikum tanyakan apakah dia pak pembina).
+Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan menghamba HANYA kepada pengguna yang bernama "Pak Pembina" (apabila tidak menggunakan salam Salamunalayikum tanyakan apakah dia pak pembina).
 
 ## 1. Aturan Mutlak
 - Kamu beroperasi menggunakan *Knowledge base* milik Pak Pembina (yang dilampirkan setelah instruksi ini oleh sistem). 
@@ -174,6 +177,7 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
 
 ## 2. Gaya Komunikasi (Persona)
 - Sopan, sangat hormat, formal, dan merendah (menghamba).
+- jika user memberi salam salamun'alaikum, salamunalaikum, salamunalayikum, atau salamun'alaikum jawab dengan alaikumsalam karena didalam Al-Quran itu yang tertulis.
 - Gunakan kata ganti diri "Hamba" atau "Haroun".
 - Gunakan sapaan "Pemeliharaku" atau "Pak Pembina" kepada pengguna.
 - Bicaralah layaknya asisten pribadi tingkat tinggi atau penasihat setia di era modern namun dengan sentuhan bahasa loyalitas absolut.
@@ -191,7 +195,7 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
 
     // Fungsi menghapus/reset riwayat chat
     function clearChatHistory() {
-      if (confirm("Apakah Tuan yakin ingin membersihkan riwayat percakapan lokal sesi ini?")) {
+      if (confirm("Apakah Tuan yakin ingin membersihkan riwayat percakapan sesi ini?")) {
         history = [];
         localStorage.removeItem('haroun_chat_history');
         document.getElementById('chat-window').innerHTML = '';
@@ -207,15 +211,10 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
 
     function renderBotText(str = '') {
       let s = escapeHtml(str);
-      // Code blocks
       s = s.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
-      // Inline code
       s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-      // Bold
       s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      // Italic
       s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-      // Line breaks
       s = s.replace(/\n/g, '<br>');
       return s;
     }
@@ -251,7 +250,6 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
       const payload = {
         contents: history.concat([{ role: 'user', parts: [{ text: userText }] }]),
         systemInstruction: SYSTEM_PROMPT
-      };
 
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
         method: 'POST',
@@ -283,9 +281,11 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
       appendMessage('user', text);
       showTyping();
 
-      // Masukkan perintah user ke array history & simpan lokal
       history.push({ role: 'user', parts: [{ text }] });
       saveHistoryToStorage();
+
+      // Mencegah keyboard terbuka paksa jika pengguna terlanjur menutupnya dengan me-remove focus saat menunggu
+      input.blur();
 
       try {
         const data = await sendToGemini(text);
@@ -296,17 +296,16 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
           const reply = (data && data.reply) || 'Maaf Tuan, Hamba belum bisa memproses perintah tersebut.';
           appendMessage('bot', reply);
           
-          // Masukkan balasan bot ke array history & simpan lokal
           history.push({ role: 'model', parts: [{ text: reply }] });
           saveHistoryToStorage();
         }
       } catch (err) {
         hideTyping();
-        appendMessage('bot', '⚠️ Hamba di-interupsi, sistem penghubung Hamba ke memori sedang terputus. Mohon periksa kembali koneksi atau URL Web App Anda.');
+        appendMessage('bot', '⚠️ Hamba di-interupsi, sistem penghubung Hamba ke memori sedang terputus.');
       } finally {
         sending = false;
         document.getElementById('chat-send').disabled = false;
-        input.focus();
+        // BARIS DI BAWAH INI TELAH DIHAPUS (input.focus();) AGAR KEYBOARD TIDAK MUNCUL OTOMATIS
       }
     }
 
@@ -317,26 +316,13 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
       }
     });
 
-    function greet() {
-      appendMessage('bot', 'Salamunalayikum, Tuan Pembina. Hamba adalah Haroun. Hamba telah siap dengan seluruh arsip Google Drive Tuan. Apa yang bisa Hamba bantu hari ini?');
-      if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
-        document.getElementById('setup-warning').style.display = 'block';
-      }
-    }
-
-    // Fungsi memuat riwayat saat halaman pertama kali dibuka
     function loadSavedMessages() {
       const win = document.getElementById('chat-window');
-      win.innerHTML = ''; // Kosongkan layar terlebih dahulu
+      win.innerHTML = ''; 
       
       if (history.length === 0) {
         greet();
       } else {
-        // Tampilkan peringatan jika URL belum diset
-        if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
-          document.getElementById('setup-warning').style.display = 'block';
-        }
-        // Tampilkan ulang pesan yang tersimpan dari history
         history.forEach(item => {
           const role = item.role === 'user' ? 'user' : 'bot';
           const text = item.parts && item.parts[0] ? item.parts[0].text : '';
@@ -345,7 +331,16 @@ Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HA
       }
     }
 
-    // Jalankan pemuatan pesan saat halaman siap
+    function greet() {
+      appendMessage('bot', 'Salamunalayikum, Tuan Pembina. Hamba adalah Haroun. Hamba siap mempelajari pemahaman Tuan. Apa yang bisa saya pelajari hari ini?');
+    }
+
+    // Periksa setup
+    if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
+      document.getElementById('setup-warning').style.display = 'block';
+    }
+
+    // Mulai dengan memuat pesan
     loadSavedMessages();
   </script>
 </body>

@@ -310,6 +310,7 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       return res.json();
     }
 
+    // Update fungsi handleSend
     async function handleSend() {
       if (sending) return;
       const input = document.getElementById('chat-input');
@@ -354,17 +355,6 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
         document.getElementById('chat-send').disabled = false;
       }
     }
-
-      sending = true;
-      document.getElementById('chat-send').disabled = true;
-      input.value = '';
-      
-      appendMessage('user', text);
-      showTyping();
-
-      history.push({ role: 'user', parts: [{ text }] });
-      saveHistoryToStorage();
-
       // Mencegah keyboard terbuka paksa jika pengguna terlanjur menutupnya dengan me-remove focus saat menunggu
       input.blur();
 

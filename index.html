@@ -250,6 +250,7 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
       const payload = {
         contents: history.concat([{ role: 'user', parts: [{ text: userText }] }]),
         systemInstruction: SYSTEM_PROMPT
+      }; 
 
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
         method: 'POST',

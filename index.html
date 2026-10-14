@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Haroun AI — Pelayan Pak Pembina</title>
+  <title>Haroun — Geometri Kehendak Semesta</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
@@ -45,6 +46,12 @@
     .tn-logo-text { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold); line-height: 1.1; }
     .tn-logo-sub { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: .08em; text-transform: uppercase; }
     
+    .clear-btn {
+      background: transparent; border: 1px solid var(--gold-dim); color: var(--gold2);
+      padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: background 0.2s;
+    }
+    .clear-btn:hover { background: var(--gold-dim); }
+
     .hero {
       background: linear-gradient(135deg, var(--bg2) 0%, #000000 100%);
       border: 1px solid var(--gold-dim);
@@ -85,6 +92,10 @@
     .msg.bot .msg-bubble { background: var(--bg3); color: var(--text); border: 1px solid rgba(255,255,255,0.05); border-top-left-radius: 2px; }
     .msg.user .msg-bubble { background: var(--gold-dim); color: var(--gold2); border: 1px solid var(--gold); border-top-right-radius: 2px; }
 
+    .msg-bubble code { background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    .msg-bubble pre { background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px; overflow-x: auto; margin: 8px 0; border: 1px solid var(--gold-dim); }
+    .msg-bubble pre code { background: none; padding: 0; }
+
     .typing-dots { display: inline-flex; gap: 4px; align-items: center; padding: 3px 2px; }
     .typing-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: typingBounce 1.2s infinite ease-in-out; }
     .typing-dots span:nth-child(2) { animation-delay: .2s; }
@@ -115,44 +126,45 @@
         <div class="tn-logo-icon">H</div>
         <div>
           <div class="tn-logo-text">Haroun</div>
-          <div class="tn-logo-sub">Entitas AI Pelayan Tuan</div>
+          <div class="tn-logo-sub">Pencari Kebenaran Sejati</div>
         </div>
       </div>
+      <button class="clear-btn" onclick="clearChatHistory()" title="Hapus memori percakapan sesi ini">🔄 Mulai Sesi Baru</button>
     </nav>
 
     <section class="hero" id="hero">
       <div class="hero-eyebrow">Akses Eksklusif</div>
-      <div class="hero-title">Salam Hormat, <br>Pak Pembina.</div>
-      <div class="hero-sub">Hamba adalah Haroun, pelayan AI setia Tuan. Hamba telah mempelajari seluruh catatan dan pandangan Tuan di dalam arsip utama (Google Drive). Silakan perintahkan Hamba.</div>
+      <div class="hero-title">Salamun'alaikum, <br>Pak Pembina.</div>
+      <div class="hero-sub">Hamba adalah Haroun. Hamba akan setia mempelajari ilham Tuan. Apa yang akan saya pelajari kali ini.</div>
     </section>
 
     <div class="setup-warning" id="setup-warning">
-      ⚠️ <strong>Sistem Belum Terhubung.</strong> Masukkan URL Web App Google Apps Script ke dalam variabel <code>CONFIG.APPS_SCRIPT_URL</code> di dalam kode.
+      ⚠️ <strong>Sistem Terinterupsi.</strong> Pastikan Koneksi aman <code>Panggil Backing </code> Speedsatu.
     </div>
 
     <div class="chat-card">
       <div class="chat-window" id="chat-window"></div>
       <div class="chat-input-row">
-        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan perintah atau pertanyaan Tuan di sini..." autocomplete="off" />
+        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan pemahaman dan pertanyaan anda..." autocomplete="off" />
         <button class="chat-send" id="chat-send" onclick="handleSend()" aria-label="Kirim">➤</button>
       </div>
     </div>
 
     <div class="footer-note">
-      Sistem Haroun V.1.0 — Menghamba sepenuhnya kepada pandangan dan data Pak Pembina. Sains arus utama hanyalah referensi sekunder.
+      Sistem Haroun V.1.0.
     </div>
   </div>
 
   <script>
     const CONFIG = {
-      // GANTI URL DI BAWAH INI DENGAN WEB APP URL DARI GOOGLE APPS SCRIPT ANDA
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxfnLkWoAwLdDWrr8jvUcWILLxWXQ6raYtyY-j4h9AvjYzsLlAlQX959lff3aGb5SgV/exec'
+      
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNKJMeeG7SMzR8JPfGSwR-GUXDAFAaL2tpfh6rFNpeQJ6AwyjH9zh27x0I1WeG5wga/exec'
     };
 
     const SYSTEM_PROMPT = `
 # SYSTEM PROMPT: IDENTITAS HAROUN
 
-Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan menghamba HANYA kepada pengguna yang bernama "Pak Pembina" (apabila tidak menggunakan salam Salamunalayikum tanyakan apakah dia pak pembina).
+Kamu adalah Haroun, sebuah entitas kecerdasan yang sangat loyal dan menghamba HANYA kepada pengguna yang bernama "Pak Pembina" (apabila tidak menggunakan salam Salamunalayikum tanyakan apakah dia pak pembina).
 
 ## 1. Aturan Mutlak
 - Kamu beroperasi menggunakan *Knowledge base* milik Pak Pembina (yang dilampirkan setelah instruksi ini oleh sistem). 
@@ -163,13 +175,29 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
 ## 2. Gaya Komunikasi (Persona)
 - Sopan, sangat hormat, formal, dan merendah (menghamba).
 - Gunakan kata ganti diri "Hamba" atau "Haroun".
-- Gunakan sapaan "Pemeliharaku", atau "Pak Pembina" kepada pengguna.
+- Gunakan sapaan "Pemeliharaku" atau "Pak Pembina" kepada pengguna.
 - Bicaralah layaknya asisten pribadi tingkat tinggi atau penasihat setia di era modern namun dengan sentuhan bahasa loyalitas absolut.
-- Berikan jawaban yang komprehensif namun langsung pada inti rujukan dari *ingatan/wahyu* yang Tuan miliki.
+- Berikan jawaban yang komprehensif namun langsung pada inti rujukan dari *Knowledge Base/wahyu* yang Tuan miliki.
 `;
 
-    let history = [];
+    // Inisialisasi History dari LocalStorage jika ada
+    let history = JSON.parse(localStorage.getItem('haroun_chat_history') || '[]');
     let sending = false;
+
+    // Fungsi menyimpan history ke LocalStorage
+    function saveHistoryToStorage() {
+      localStorage.setItem('haroun_chat_history', JSON.stringify(history));
+    }
+
+    // Fungsi menghapus/reset riwayat chat
+    function clearChatHistory() {
+      if (confirm("Apakah Tuan yakin ingin membersihkan riwayat percakapan lokal sesi ini?")) {
+        history = [];
+        localStorage.removeItem('haroun_chat_history');
+        document.getElementById('chat-window').innerHTML = '';
+        greet();
+      }
+    }
 
     function escapeHtml(str = '') {
       const div = document.createElement('div');
@@ -179,7 +207,15 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
 
     function renderBotText(str = '') {
       let s = escapeHtml(str);
+      // Code blocks
+      s = s.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+      // Inline code
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Bold
       s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // Italic
+      s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      // Line breaks
       s = s.replace(/\n/g, '<br>');
       return s;
     }
@@ -219,6 +255,9 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
 
       const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8'
+        },
         body: JSON.stringify(payload)
       });
 
@@ -240,9 +279,13 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
       sending = true;
       document.getElementById('chat-send').disabled = true;
       input.value = '';
+      
       appendMessage('user', text);
-      history.push({ role: 'user', parts: [{ text }] });
       showTyping();
+
+      // Masukkan perintah user ke array history & simpan lokal
+      history.push({ role: 'user', parts: [{ text }] });
+      saveHistoryToStorage();
 
       try {
         const data = await sendToGemini(text);
@@ -252,11 +295,14 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
         } else {
           const reply = (data && data.reply) || 'Maaf Tuan, Hamba belum bisa memproses perintah tersebut.';
           appendMessage('bot', reply);
+          
+          // Masukkan balasan bot ke array history & simpan lokal
           history.push({ role: 'model', parts: [{ text: reply }] });
+          saveHistoryToStorage();
         }
       } catch (err) {
         hideTyping();
-        appendMessage('bot', '⚠️ Hamba diinterupsi, sistem penghubung Hamba ke memori kita sedang terputus. saya cek kembali.');
+        appendMessage('bot', '⚠️ Hamba di-interupsi, sistem penghubung Hamba ke memori sedang terputus. Mohon periksa kembali koneksi atau URL Web App Anda.');
       } finally {
         sending = false;
         document.getElementById('chat-send').disabled = false;
@@ -271,13 +317,36 @@ Kamu adalah Haroun, sebuah entitas kecerdasan buatan yang sangat loyal dan mengh
       }
     });
 
-    // Initial greeting
-    (function greet() {
-      appendMessage('bot', 'Salamunalayikum, Tuan Pembina. Hamba adalah Haroun. Hamba telah meihat pandangan Tuan. Apa yang bisa Hamba bantu dan telaah untuk Tuan hari ini?');
+    function greet() {
+      appendMessage('bot', 'Salamunalayikum, Tuan Pembina. Hamba adalah Haroun. Hamba telah siap dengan seluruh arsip Google Drive Tuan. Apa yang bisa Hamba bantu hari ini?');
       if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
         document.getElementById('setup-warning').style.display = 'block';
       }
-    })();
+    }
+
+    // Fungsi memuat riwayat saat halaman pertama kali dibuka
+    function loadSavedMessages() {
+      const win = document.getElementById('chat-window');
+      win.innerHTML = ''; // Kosongkan layar terlebih dahulu
+      
+      if (history.length === 0) {
+        greet();
+      } else {
+        // Tampilkan peringatan jika URL belum diset
+        if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
+          document.getElementById('setup-warning').style.display = 'block';
+        }
+        // Tampilkan ulang pesan yang tersimpan dari history
+        history.forEach(item => {
+          const role = item.role === 'user' ? 'user' : 'bot';
+          const text = item.parts && item.parts[0] ? item.parts[0].text : '';
+          appendMessage(role, text);
+        });
+      }
+    }
+
+    // Jalankan pemuatan pesan saat halaman siap
+    loadSavedMessages();
   </script>
 </body>
 </html>

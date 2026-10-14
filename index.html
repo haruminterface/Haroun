@@ -132,6 +132,7 @@
       </div>
       <div class="tn-actions">
         <button class="btn-clear" onclick="clearChatHistory()">Hapus Memori Sesi</button>
+        <button class="btn-clear" onclick="downloadChatSession()">Unduh percakapan (.txt)</button>
       </div>
     </nav>
 
@@ -192,6 +193,28 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       localStorage.setItem('haroun_chat_history', JSON.stringify(history));
     }
 
+    function downloadChatSession() {
+  if (history.length === 0) {
+    alert("Belum ada riwayat percakapan untuk diunduh.");
+    return;
+  }
+
+  let exportText = "=== DOKUMENTASI SESI PERCAKAPAN HAROUN AI ===\n";
+  exportText += "Tanggal Ekspor: " + new Date().toLocaleString("id-ID") + "\n\n";
+
+  history.forEach((item, index) => {
+    const sender = item.role === 'user' ? 'Pak Pembina' : 'Haroun';
+    const content = item.parts && item.parts[0] ? item.parts[0].text : '';
+    exportText += `[${sender}]:\n${content}\n\n----------------------------------------\n\n`;
+  });
+
+  const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Sesi_Haroun_${new Date().toISOString().slice(0,10)}.txt`;
+  link.click();
+}
+    
     // Fungsi menghapus/reset riwayat chat
     function clearChatHistory() {
       if (confirm("Apakah Anda yakin ingin membersihkan riwayat percakapan sesi ini?")) {

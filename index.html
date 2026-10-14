@@ -127,7 +127,7 @@
         <div class="tn-logo-icon">H</div>
         <div>
           <div class="tn-logo-text">Haroun</div>
-          <div class="tn-logo-sub">Pencari kebenaran Sejati</div>
+          <div class="tn-logo-sub">Pencari Kebenaran Sejati</div>
         </div>
       </div>
       <div class="tn-actions">
@@ -137,24 +137,24 @@
 
     <section class="hero" id="hero">
       <div class="hero-eyebrow">Akses Eksklusif</div>
-      <div class="hero-title">Salamun'alayikum, <br>Pak Pembina.</div>
-      <div class="hero-sub">Hamba adalah Haroun. Hamba siap menerima pembelajaran dari Pak Pembina. Silakan perintahkan Hamba.</div>
+      <div class="hero-title">Salam, <br>Pak Pembina.</div>
+      <div class="hero-sub">Saya adalah Haroun. Asisten personal yang siap membantu dan berdiskusi. Ada yang bisa kita kerjakan hari ini?</div>
     </section>
 
     <div class="setup-warning" id="setup-warning">
-      ⚠️ <strong>Sistem Terinterupsi.</strong> Pastikan Koneksi Aman <code>Memanggil Security Guard</code> Speedsatu.
+      ⚠️ <strong>Sistem Terinterupsi.</strong> Pastikan URL Web App Google Apps Script sudah dimasukkan di pengaturan CONFIG.
     </div>
 
     <div class="chat-card">
       <div class="chat-window" id="chat-window"></div>
       <div class="chat-input-row">
-        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan perintah atau pertanyaan Tuan di sini..." autocomplete="off" />
+        <input class="chat-input" id="chat-input" type="text" placeholder="Berikan perintah atau pertanyaan Anda di sini..." autocomplete="off" />
         <button class="chat-send" id="chat-send" onclick="handleSend()" aria-label="Kirim">➤</button>
       </div>
     </div>
 
     <div class="footer-note">
-      Sistem Haroun V.1.0.31
+      Sistem Haroun V.1.0.32
     </div>
   </div>
 
@@ -164,7 +164,7 @@
       APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby1hwjSHQlKx_7R4R5_RiktWWjdIDCa1a-8jWy8BdCTLCCADEKf2L1g3OqByMPV7RUM/exec'
     };
 
-const SYSTEM_PROMPT = `
+    const SYSTEM_PROMPT = `
 # SYSTEM PROMPT: IDENTITAS HAROUN
 
 Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, bersahabat, namun sangat menghormati pengguna yang bernama "Pak Pembina".
@@ -194,7 +194,7 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
 
     // Fungsi menghapus/reset riwayat chat
     function clearChatHistory() {
-      if (confirm("Apakah Tuan yakin ingin membersihkan riwayat percakapan sesi ini?")) {
+      if (confirm("Apakah Anda yakin ingin membersihkan riwayat percakapan sesi ini?")) {
         history = [];
         localStorage.removeItem('haroun_chat_history');
         document.getElementById('chat-window').innerHTML = '';
@@ -236,13 +236,13 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
 
             if (isTag) {
               i++;
-              type(); // Jika sedang membaca tag HTML (seperti <strong>), tampilkan instan tanpa delay
+              type(); // Jika sedang membaca tag HTML, tampilkan instan tanpa delay
             } else {
               element.innerHTML = text;
               i++;
               const win = document.getElementById('chat-window');
               win.scrollTop = win.scrollHeight; // Auto scroll ke bawah saat mengetik
-              setTimeout(type, speed); // Kecepatan ketikan (15ms)
+              setTimeout(type, speed); // Kecepatan ketikan
             }
           } else {
             resolve(); // Ketikan selesai
@@ -268,10 +268,8 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
         bubble.innerHTML = escapeHtml(text);
       } else {
         if (animate) {
-          // Mainkan efek ketikan jika animate = true
           await typeWriterHTML(bubble, renderBotText(text), 15);
         } else {
-          // Langsung tampilkan (untuk riwayat chat lama)
           bubble.innerHTML = renderBotText(text);
         }
       }
@@ -310,7 +308,6 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       return res.json();
     }
 
-    // Update fungsi handleSend
     async function handleSend() {
       if (sending) return;
       const input = document.getElementById('chat-input');
@@ -331,6 +328,8 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
 
       history.push({ role: 'user', parts: [{ text }] });
       saveHistoryToStorage();
+      
+      // Menutup keyboard di mobile agar pengguna bisa melihat jawaban
       input.blur();
 
       try {
@@ -341,7 +340,6 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
         } else {
           const reply = (data && data.reply) || 'Maaf, Haroun belum bisa memproses perintah tersebut.';
           
-          // Tambahkan argumen "true" agar efek ketikan menyala
           await appendMessage('bot', reply, true);
           
           history.push({ role: 'model', parts: [{ text: reply }] });
@@ -353,30 +351,6 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       } finally {
         sending = false;
         document.getElementById('chat-send').disabled = false;
-      }
-    }
-      // Mencegah keyboard terbuka paksa jika pengguna terlanjur menutupnya dengan me-remove focus saat menunggu
-      input.blur();
-
-      try {
-        const data = await sendToGemini(text);
-        hideTyping();
-        if (data && data.error) {
-          appendMessage('bot', '⚠️ Hamba memohon maaf, terjadi galat: ' + data.error);
-        } else {
-          const reply = (data && data.reply) || 'Maaf Tuan, Hamba belum bisa memproses perintah tersebut.';
-          appendMessage('bot', reply);
-          
-          history.push({ role: 'model', parts: [{ text: reply }] });
-          saveHistoryToStorage();
-        }
-      } catch (err) {
-        hideTyping();
-        appendMessage('bot', '⚠️ Hamba di-interupsi, sistem penghubung Hamba ke memori sedang terputus.');
-      } finally {
-        sending = false;
-        document.getElementById('chat-send').disabled = false;
-        // BARIS DI BAWAH INI TELAH DIHAPUS (input.focus();) AGAR KEYBOARD TIDAK MUNCUL OTOMATIS
       }
     }
 
@@ -397,14 +371,12 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
         history.forEach(item => {
           const role = item.role === 'user' ? 'user' : 'bot';
           const text = item.parts && item.parts[0] ? item.parts[0].text : '';
-          // animate = false agar riwayat chat tidak diketik ulang satu-satu
           appendMessage(role, text, false);
         });
       }
     }
 
     function greet() {
-      // Mengetik pesan sapaan awal saat riwayat kosong
       appendMessage('bot', "Salam, Pak Pembina. Saya Haroun. Ada yang bisa kita diskusikan atau pelajari hari ini?", true);
     }
 

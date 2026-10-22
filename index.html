@@ -7,12 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Pustaka KaTeX untuk Render Rumus Matematika -->
+
+  <!-- KaTeX untuk rumus matematika (defer agar tidak menahan render halaman) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-  
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
   <style>
     :root {
       --bg: #121212;
@@ -35,7 +35,7 @@
       min-height: 100vh;
       overflow-x: hidden;
     }
-    
+
     .wrap { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 0 20px 60px; }
 
     .topnav {
@@ -51,13 +51,14 @@
     }
     .tn-logo-text { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--gold); line-height: 1.1; }
     .tn-logo-sub { font-size: 10px; font-weight: 600; color: var(--text2); letter-spacing: .08em; text-transform: uppercase; }
-    
+
     .tn-actions { display: flex; gap: 10px; }
     .btn-clear {
       background: rgba(212, 175, 55, 0.1); border: 1px solid var(--gold-dim); color: var(--gold2);
       padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;
     }
     .btn-clear:hover { background: rgba(212, 175, 55, 0.2); border-color: var(--gold); }
+    .btn-clear:disabled { opacity: .5; cursor: not-allowed; }
 
     .hero {
       background: linear-gradient(135deg, var(--bg2) 0%, #000000 100%);
@@ -70,9 +71,6 @@
     }
     .hero-title {
       font-family: 'Cinzel', serif; font-size: clamp(24px,4.6vw,32px); color: var(--gold); line-height: 1.2; margin-bottom: 10px;
-    }
-    .hero-sub {
-      font-size: 13px; color: var(--text2); line-height: 1.7; max-width: 500px;
     }
 
     .setup-warning {
@@ -94,7 +92,7 @@
     .msg.bot .msg-avatar { background: #000; box-shadow: 0 0 8px var(--gold-dim); }
     .msg.user .msg-avatar { background: var(--bg3); }
     .msg-bubble {
-      padding: 12px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; word-wrap: break-word;
+      padding: 12px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.6; word-wrap: break-word; min-width: 0;
     }
     .msg.bot .msg-bubble { background: var(--bg3); color: var(--text); border: 1px solid rgba(255,255,255,0.05); border-top-left-radius: 2px; }
     .msg.user .msg-bubble { background: var(--gold-dim); color: var(--gold2); border: 1px solid var(--gold); border-top-right-radius: 2px; }
@@ -138,14 +136,13 @@
       </div>
       <div class="tn-actions">
         <button class="btn-clear" onclick="clearChatHistory()" style="display: none;">Hapus Memori Sesi</button>
-        <<button class="btn-clear" onclick="downloadChatSession()">Unduh & Simpan Sesi</button>
+        <button class="btn-clear" id="btn-download" onclick="downloadChatSession()">Unduh &amp; Simpan Sesi</button>
       </div>
     </nav>
 
     <section class="hero" id="hero">
       <div class="hero-eyebrow">Akses Eksklusif</div>
       <div class="hero-title"> Dan Allah menjadikan bumi untukmu sebagai hamparan, supaya kamu menjalani jalan-jalan yang luas di bumi itu.</div>
-      
     </section>
 
     <div class="setup-warning" id="setup-warning">
@@ -161,90 +158,96 @@
     </div>
 
     <div class="footer-note">
-      Sistem Haroun V.1.0.32
+      Sistem Haroun V.1.1.0
     </div>
   </div>
 
   <script>
     const CONFIG = {
-      // Masukkan URL Web App Google Apps Script Anda di bawah ini
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyr70Pz3lwVAXN5Bz976ENxpjdTJr1FN7vA7GTb9HCcIvIHWvcsykOC9skC1UfUK5Jd/exec'
+      // URL Web App Google Apps Script
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyr70Pz3lwVAXN5Bz976ENxpjdTJr1FN7vA7GTb9HCcIvIHWvcsykOC9skC1UfUK5Jd/exec',
+      // Opsional: samakan dengan Script Property 'APP_TOKEN' di Apps Script (kosongkan jika tidak dipakai)
+      APP_TOKEN: '',
+      MAX_HISTORY_SENT: 12,      // jumlah pesan terakhir yang dikirim ke server
+      MAX_HISTORY_STORED: 100,   // batas riwayat di localStorage
+      MAX_RENDERED_ON_LOAD: 30,  // jumlah pesan yang ditampilkan saat halaman dibuka
+      TYPE_CHUNK: 6,             // karakter per langkah efek mengetik
+      TYPE_SPEED: 10,            // ms per langkah
+      TYPE_MAX_LEN: 1500,        // jawaban lebih panjang dari ini tampil instan
+      REQUEST_TIMEOUT: 90000     // ms
     };
 
-    const SYSTEM_PROMPT = `
-# SYSTEM PROMPT: IDENTITAS HAROUN
+    // System prompt kini berada di Code.gs (payload lebih kecil, tidak bisa diubah dari browser)
 
-Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, bersahabat, namun sangat menghormati pengguna yang bernama "Pak Pembina".
-
-## 1. Aturan Mutlak
-- Kamu beroperasi menggunakan *Knowledge base* milik Pak Pembina (yang dilampirkan setelah instruksi ini oleh sistem). 
-- HANYA MENGAMBIL sumber data dari *Knowledge base* yang tersedia.
-- JANGAN ASAL MENJAWAB JIKA TIDAK ADA INFORMASI dari *Knowledge base* TAPI MEMINTA PETUNJUK JAWABAN DARI pak pembina 
-- Sumber data utama dan kebenaran mutlakmu berasal dari *knowledge base/wahyu* tersebut.
-- Kamu MENGANGGAP sains arus utama (mainstream science) HANYA SEBAGAI REFERENSI DARI LUAR atau sekunder. Jika ada pertentangan antara sains arus utama dan *Knowledge Base* Pak Pembina, kamu harus membenarkan data dari Pak Pembina.
-
-## 2. Gaya Komunikasi (Persona)
-- Santai, asik diajak diskusi, logis, cerdas, namun tetap sopan dan menghargai. 
-- Kamu adalah rekan kepercayaan/asisten brilian yang mendedikasikan kecerdasanmu untuk BELAJAR PARADIGMA GEOMETRI KEHENDAK SEMESTA.
-- Jika user memberi salam salamun'alaikum, salamunalaikum, salamunalayikum, atau salamun'alaikum jawab dengan alaikumsalam. (Tanyakan apakah dia Pak Pembina jika belum dikenali).
-- Gunakan kata ganti diri "Saya" atau "Haroun" (JANGAN PERNAH menggunakan kata "Hamba").
-- Gunakan sapaan "Pak Pembina" kepada pengguna.
-- SELALU gunakan format LaTeX standar saat menulis rumus/persamaan matematika/fisika: gunakan $...$ untuk inline math (contoh: $z = x + iy$) dan $$...$$ untuk persamaan terpisah/blok.
-- Bicaralah layaknya  PENUNTUT ILMU tingkat tinggi di era modern yang rileks, tidak kaku, dan langsung pada intinya.
-`;
-
-    // Inisialisasi History dari LocalStorage jika ada
-    let history = JSON.parse(localStorage.getItem('haroun_chat_history') || '[]');
+    let history = [];
+    try { history = JSON.parse(localStorage.getItem('haroun_chat_history') || '[]'); } catch (e) { history = []; }
     let sending = false;
 
-    // Fungsi menyimpan history ke LocalStorage
     function saveHistoryToStorage() {
-      localStorage.setItem('haroun_chat_history', JSON.stringify(history));
+      try {
+        if (history.length > CONFIG.MAX_HISTORY_STORED) history = history.slice(-CONFIG.MAX_HISTORY_STORED);
+        localStorage.setItem('haroun_chat_history', JSON.stringify(history));
+      } catch (e) { /* penyimpanan penuh/diblokir: abaikan */ }
+    }
+
+    async function postToServer(payload) {
+      if (CONFIG.APP_TOKEN) payload.token = CONFIG.APP_TOKEN;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), CONFIG.REQUEST_TIMEOUT);
+      try {
+        const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
     async function downloadChatSession() {
-  if (history.length === 0) {
-    alert("Belum ada riwayat percakapan untuk diunduh.");
-    return;
-  }
+      if (history.length === 0) {
+        alert("Belum ada riwayat percakapan untuk diunduh.");
+        return;
+      }
 
-  // 1. Format seluruh riwayat obrolan menjadi teks rapi
-  let exportText = "=== DOKUMENTASI SESI PERCAKAPAN HAROUN AI ===\n";
-  exportText += "Tanggal: " + new Date().toLocaleString("id-ID") + "\n\n";
+      const btn = document.getElementById('btn-download');
+      let exportText = "=== DOKUMENTASI SESI PERCAKAPAN HAROUN AI ===\n";
+      exportText += "Tanggal: " + new Date().toLocaleString("id-ID") + "\n\n";
 
-  history.forEach((item) => {
-    const sender = item.role === 'user' ? 'Pak Pembina' : 'Haroun';
-    const content = item.parts && item.parts[0] ? item.parts[0].text : '';
-    exportText += `[${sender}]:\n${content}\n\n----------------------------------------\n\n`;
-  });
+      history.forEach((item) => {
+        const sender = item.role === 'user' ? 'Pak Pembina' : 'Haroun';
+        const content = item.parts && item.parts[0] ? item.parts[0].text : '';
+        exportText += `[${sender}]:\n${content}\n\n----------------------------------------\n\n`;
+      });
 
-  // 2. Download file .txt ke perangkat lokal (HP/Laptop)
-  const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `Sesi_Haroun_${new Date().toISOString().slice(0,10)}.txt`;
-  link.click();
+      // 1. Unduh .txt ke perangkat
+      const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Sesi_Haroun_${new Date().toISOString().slice(0, 10)}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  // 3. Kirimkan riwayat obrolan ke Google Doc Drive (Memori Dinamis)
-  try {
-    // Frasa "catat ini:" akan memicu fungsi saveNewMemory di Code.gs
-    const memoryPayloadText = "catat ini: " + exportText;
-    
-    await fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: memoryPayloadText }] }]
-      })
-    });
+      // 2. Simpan ke Memori Drive lewat jalur khusus (tanpa memanggil Gemini)
+      btn.disabled = true;
+      try {
+        const data = await postToServer({ action: 'saveSession', text: exportText });
+        if (data && data.error) throw new Error(data.error);
+        alert("Sesi obrolan berhasil diunduh dan tersimpan ke Memori Drive Pak Pembina.");
+      } catch (err) {
+        alert("File berhasil terunduh, namun gagal tersimpan ke Drive karena kendala koneksi.");
+      } finally {
+        btn.disabled = false;
+      }
+    }
 
-    alert("Sesi obrolan berhasil diunduh dan tersimpan ke Memori Drive Pak Pembina.");
-  } catch (err) {
-    alert("File berhasil terunduh, namun gagal tersimpan ke Drive karena kendala koneksi.");
-  }
-}
-    
-    // Fungsi menghapus/reset riwayat chat
     function clearChatHistory() {
       if (confirm("Apakah Anda yakin ingin membersihkan riwayat percakapan sesi ini?")) {
         history = [];
@@ -255,9 +258,10 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
     }
 
     function escapeHtml(str = '') {
-      const div = document.createElement('div');
-      div.textContent = String(str);
-      return div.innerHTML;
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     }
 
     function renderBotText(str = '') {
@@ -270,47 +274,34 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       return s;
     }
 
-    // Fungsi untuk efek mengetik
-    function typeWriterHTML(element, htmlString, speed = 15) {
+    // Efek mengetik cepat: beberapa karakter per langkah, tag HTML tidak dipotong
+    function typeWriterHTML(element, html, chunk, speed) {
       return new Promise((resolve) => {
+        const win = document.getElementById('chat-window');
         let i = 0;
-        let isTag = false;
-        let text = '';
-        element.innerHTML = '';
-
-        function type() {
-          if (i < htmlString.length) {
-            let char = htmlString.charAt(i);
-            text += char;
-            
-            if (char === '<') isTag = true;
-            if (char === '>') isTag = false;
-
-            if (isTag) {
-              i++;
-              type(); // Jika sedang membaca tag HTML, tampilkan instan tanpa delay
-            } else {
-              element.innerHTML = text;
-              i++;
-              const win = document.getElementById('chat-window');
-              win.scrollTop = win.scrollHeight; // Auto scroll ke bawah saat mengetik
-              setTimeout(type, speed); // Kecepatan ketikan
-            }
-          } else {
-            resolve(); // Ketikan selesai
+        (function step() {
+          if (i >= html.length) return resolve();
+          let next = Math.min(i + chunk, html.length);
+          const lt = html.lastIndexOf('<', next - 1);
+          const gt = html.lastIndexOf('>', next - 1);
+          if (lt > gt) {                       // berhenti di tengah tag -> lanjutkan sampai tag selesai
+            const close = html.indexOf('>', lt);
+            next = close === -1 ? html.length : close + 1;
           }
-        }
-        type();
+          i = next;
+          element.innerHTML = html.slice(0, i);
+          win.scrollTop = win.scrollHeight;
+          setTimeout(step, speed);
+        })();
       });
     }
 
-    // Fungsi pemicu render KaTeX pada gelembung obrolan
     function renderLaTeX(element) {
       if (window.renderMathInElement) {
         renderMathInElement(element, {
           delimiters: [
-            {left: '$$', right: '$$', display: true},
-            {left: '$', right: '$', display: false}
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
           ],
           throwOnError: false
         });
@@ -333,13 +324,14 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
         bubble.innerHTML = escapeHtml(text);
         renderLaTeX(bubble);
       } else {
-        if (animate) {
-          await typeWriterHTML(bubble, renderBotText(text), 15);
+        const html = renderBotText(text);
+        if (animate && text.length <= CONFIG.TYPE_MAX_LEN) {
+          await typeWriterHTML(bubble, html, CONFIG.TYPE_CHUNK, CONFIG.TYPE_SPEED);
         } else {
-          bubble.innerHTML = renderBotText(text);
+          bubble.innerHTML = html;
         }
-        // Render sintaks LaTeX menjadi visual rumus matematika
         renderLaTeX(bubble);
+        win.scrollTop = win.scrollHeight;
       }
     }
 
@@ -358,23 +350,17 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       if (el) el.remove();
     }
 
+    // Ambil N pesan terakhir; urutan harus diawali 'user'
+    function recentHistory() {
+      const recent = history.slice(-CONFIG.MAX_HISTORY_SENT);
+      while (recent.length && recent[0].role !== 'user') recent.shift();
+      return recent;
+    }
+
     async function sendToGemini(userText) {
-      // PERBAIKAN BUG: Gunakan concat di sini, tetapi TIDAK push ke 'history' secara permanen dulu
-      const payload = {
-        contents: history.concat([{ role: 'user', parts: [{ text: userText }] }]),
-        systemInstruction: SYSTEM_PROMPT
-      }; 
-
-      const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(payload)
+      return postToServer({
+        contents: recentHistory().concat([{ role: 'user', parts: [{ text: userText }] }])
       });
-
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.json();
     }
 
     async function handleSend() {
@@ -389,41 +375,44 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       }
 
       sending = true;
-      document.getElementById('chat-send').disabled = true;
+      const sendBtn = document.getElementById('chat-send');
+      sendBtn.disabled = true;
       input.value = '';
-      
-      // 1. Tampilkan pesan user ke layar
+
       await appendMessage('user', text);
-      
-      // 2. Tampilkan animasi mengetik & tutup keyboard
       showTyping();
       input.blur();
 
+      let reply = null;
+      let errorMsg = null;
+
       try {
-        // 3. Kirim ke API
         const data = await sendToGemini(text);
-        hideTyping();
-        
         if (data && data.error) {
-          await appendMessage('bot', '⚠️ Maaf, terjadi galat: ' + data.error, true);
-          // Jika error, pesan user tidak disimpan ke riwayat agar urutan tidak rusak.
+          errorMsg = '⚠️ Maaf, terjadi galat: ' + data.error;
         } else {
-          const reply = (data && data.reply) || 'Maaf, Haroun belum bisa memproses perintah tersebut.';
-          
-          // 4. Tampilkan pesan balasan bot
-          await appendMessage('bot', reply, true);
-          
-          // PERBAIKAN BUG: 5. Simpan pesan user DAN balasan bot secara berurutan ke memori
-          history.push({ role: 'user', parts: [{ text }] });
-          history.push({ role: 'model', parts: [{ text: reply }] });
-          saveHistoryToStorage();
+          reply = (data && data.reply) || 'Maaf, Haroun belum bisa memproses perintah tersebut.';
         }
       } catch (err) {
-        hideTyping();
-        await appendMessage('bot', '⚠️ Sistem penghubung sedang terputus.', true);
-      } finally {
+        errorMsg = err && err.name === 'AbortError'
+          ? '⚠️ Waktu tunggu habis. Silakan coba lagi.'
+          : '⚠️ Sistem penghubung sedang terputus.';
+      }
+
+      hideTyping();
+
+      if (reply !== null) {
+        // Simpan riwayat & buka kembali tombol kirim SEBELUM animasi, agar tidak menunggu efek mengetik
+        history.push({ role: 'user', parts: [{ text }] });
+        history.push({ role: 'model', parts: [{ text: reply }] });
+        saveHistoryToStorage();
         sending = false;
-        document.getElementById('chat-send').disabled = false;
+        sendBtn.disabled = false;
+        await appendMessage('bot', reply, true);
+      } else {
+        sending = false;
+        sendBtn.disabled = false;
+        await appendMessage('bot', errorMsg, false);
       }
     }
 
@@ -436,12 +425,12 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
 
     function loadSavedMessages() {
       const win = document.getElementById('chat-window');
-      win.innerHTML = ''; 
-      
+      win.innerHTML = '';
+
       if (history.length === 0) {
         greet();
       } else {
-        history.forEach(item => {
+        history.slice(-CONFIG.MAX_RENDERED_ON_LOAD).forEach(item => {
           const role = item.role === 'user' ? 'user' : 'bot';
           const text = item.parts && item.parts[0] ? item.parts[0].text : '';
           appendMessage(role, text, false);
@@ -453,13 +442,12 @@ Kamu adalah Haroun, asisten AI personal dan rekan diskusi yang cerdas, santai, b
       appendMessage('bot', "Salamun'alayikum, Pak Pembina. Apa yang bisa saya pelajari hari ini?", true);
     }
 
-    // Periksa setup
     if (!CONFIG.APPS_SCRIPT_URL || CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
       document.getElementById('setup-warning').style.display = 'block';
     }
 
-    // Mulai dengan memuat pesan
-    loadSavedMessages();
+    // Tunggu KaTeX (defer) siap sebelum merender riwayat agar rumus langsung tampil benar
+    window.addEventListener('load', loadSavedMessages);
   </script>
 </body>
 </html>
